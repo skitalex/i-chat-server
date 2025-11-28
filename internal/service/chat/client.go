@@ -6,7 +6,7 @@ import (
 	"golang.org/x/net/websocket"
 )
 
-func NewClient(id string, chatID string, conn *websocket.Conn) *client {
+func NewClient(id string, chatID int64, conn *websocket.Conn) *client {
 	return &client{
 		id:     id,
 		chatID: chatID,
@@ -16,7 +16,7 @@ func NewClient(id string, chatID string, conn *websocket.Conn) *client {
 
 type client struct {
 	id     string
-	chatID string
+	chatID int64
 	conn   *websocket.Conn
 }
 

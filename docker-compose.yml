@@ -21,6 +21,7 @@ services:
     ports:
       - "0.0.0.0:${PG_PORT}:${PG_PORT}"
   migrator:
+    container_name: migrator-chat-container
     build:
       context: .
       dockerfile: docker/migrations.Dockerfile
@@ -36,6 +37,7 @@ services:
       - .env
   redis:
     image: "redis/redis-stack:7.4.0-v0"
+    container_name: redis-chat-container
     restart: unless-stopped
     logging: *default-logging
     volumes:

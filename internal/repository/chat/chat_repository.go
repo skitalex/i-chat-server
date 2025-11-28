@@ -19,15 +19,39 @@ type chatRepository struct {
 	db *sql.DB
 }
 
+// NextChatID implements repository.ChatRepository.
+func (c *chatRepository) NextChatID(ctx context.Context, chatType int) (int64, error) {
+	query := `
+	UPDATE id_sequences
+	SET last_value = last_value + 1
+	WHERE name = 'chat_id'
+	RETURNING last_value
+	`
+	var lastValue int64
+	err := c.db.QueryRowContext(ctx, query).Scan(&lastValue)
+	if err != nil {
+		return 0, err
+	}
+
+	localID := uint64(lastValue) & 0x3FFFFFFFFFFFFFFF
+
+	return int64((uint64(chatType) << 62) | localID), nil
+}
+
 // CreateChat implements repository.ChatRepository.
-func (c *chatRepository) CreateChat(ctx context.Context, chatID string, name string) error {
+func (c *chatRepository) CreateChat(ctx context.Context, chatType int, name string) error {
+	chatID, err := c.NextChatID(ctx, chatType)
+	if err != nil {
+		return err
+	}
+
 	query := `
 	INSERT INTO 
-	chats(uuid, name) 
+	chats(id, name) 
 	VALUES ($1, $2)
 	ON CONFLICT DO NOTHING`
-	_, err := c.db.ExecContext(ctx, query, chatID, name)
-	if err != nil {
+
+	if _, err := c.db.ExecContext(ctx, query, chatID, name); err != nil {
 		return err
 	}
 
@@ -35,8 +59,8 @@ func (c *chatRepository) CreateChat(ctx context.Context, chatID string, name str
 }
 
 // GetChat implements repository.ChatRepository.
-func (c *chatRepository) GetChat(ctx context.Context, chatID string) (*chatdomain.Chat, error) {
-	query := `SELECT uuid, name FROM chats WHERE uuid = $1`
+func (c *chatRepository) GetChat(ctx context.Context, chatID int64) (*chatdomain.Chat, error) {
+	query := `SELECT id, name FROM chats WHERE id = $1`
 
 	var chat chatdomain.Chat
 	err := c.db.QueryRowContext(ctx, query, chatID).Scan(&chat.ID, &chat.Name)
@@ -49,7 +73,7 @@ func (c *chatRepository) GetChat(ctx context.Context, chatID string) (*chatdomai
 
 // GetChats implements repository.ChatRepository.
 func (c *chatRepository) GetChats(ctx context.Context) ([]*chatdomain.Chat, error) {
-	query := "SELECT uuid, name FROM chats"
+	query := "SELECT id, name FROM chats"
 	rows, err := c.db.QueryContext(ctx, query)
 	if err != nil {
 		return nil, err

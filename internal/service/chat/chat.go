@@ -1,16 +1,18 @@
 package chatsrv
 
-import "sync"
+import (
+	"sync"
+)
 
 type chat struct {
 	m       sync.RWMutex
-	chatID  string
+	chatID  int64
 	clients map[string]*client
 
 	isClosed bool
 }
 
-func newChat(chatID string) *chat {
+func newChat(chatID int64) *chat {
 	return &chat{
 		chatID:  chatID,
 		clients: make(map[string]*client),

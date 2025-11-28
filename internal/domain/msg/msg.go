@@ -14,5 +14,5 @@ type Message struct {
 	Action   string `json:"action"`
 	Content  string `json:"content"`
 	SenderID string `json:"sender"`
-	ChatID   string `json:"chat_id"`
+	ChatID   int64  `json:"chat_id"`
 }

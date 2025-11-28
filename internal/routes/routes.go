@@ -27,7 +27,7 @@ func InitRoutes(ctrl controller.ChatController) *http.ServeMux {
 	}
 
 	mux.Handle("/ws", wsServer)
-	mux.HandleFunc("/chats", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/v1/chats", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case "GET":
 			ctrl.GetChats(w, r)

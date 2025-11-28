@@ -53,7 +53,7 @@ func (c *implementation) CreateChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	chat, err := c.srv.CreateChat(r.Context(), req.Name)
+	chat, err := c.srv.CreateChat(r.Context(), req.Type, req.Name)
 	if err != nil {
 		c.log.Error("failed to create chat", zap.Error(err))
 		http.Error(w, "failed to create chat", http.StatusInternalServerError)

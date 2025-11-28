@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"golang.org/x/net/websocket"
 )
@@ -18,7 +17,7 @@ var _ service.ChatService = (*chatService)(nil)
 
 func NewChatService(repo repository.ChatRepository, log *zap.Logger) service.ChatService {
 	s := &chatService{
-		chats:   make(map[string]*chat),
+		chats:   make(map[int64]*chat),
 		msgChan: make(chan msgdomain.Message, 100),
 		repo:    repo,
 		log:     log,
@@ -31,7 +30,7 @@ func NewChatService(repo repository.ChatRepository, log *zap.Logger) service.Cha
 
 type chatService struct {
 	mutex sync.RWMutex
-	chats map[string]*chat
+	chats map[int64]*chat
 
 	msgChan chan msgdomain.Message
 	repo    repository.ChatRepository
@@ -39,10 +38,8 @@ type chatService struct {
 }
 
 // CreateChat implements service.ChatService.
-func (s *chatService) CreateChat(ctx context.Context, name string) (*chatdomain.Chat, error) {
-	uuid := uuid.New().String()
-
-	err := s.repo.CreateChat(ctx, uuid, name)
+func (s *chatService) CreateChat(ctx context.Context, chatType int, name string) (*chatdomain.Chat, error) {
+	err := s.repo.CreateChat(ctx, chatType, name)
 	if err != nil {
 		s.log.Error("CreateChat",
 			zap.Any("msg", name),
