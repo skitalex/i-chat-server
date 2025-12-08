@@ -82,18 +82,19 @@ func (c *chatService) GetIncomeMessage(ws *websocket.Conn, msg msgdomain.Message
 			zap.Any("Chat", msg.ChatID))
 		return c.handleLeaveChat(ws, msg)
 	case string(msgdomain.ActionSendText), string(msgdomain.ActionSendBinary):
-		// For simplicity, we treat both text and binary messages the same way he
 		c.log.Debug("Handle Send Text",
 			zap.Any("User", msg.SenderID),
 			zap.Any("Chat", msg.ChatID))
 		c.msgChan <- msg
 		return nil
 	default:
-		// Unknown action
+		c.log.Debug("Handle Unknown Action",
+			zap.Any("User", msg.SenderID),
+			zap.Any("Chat", msg.ChatID),
+			zap.String("Action", msg.Action))
+
 		return nil
 	}
-
-	return nil
 }
 
 func (c *chatService) handleJoinChat(ws *websocket.Conn, msg msgdomain.Message) error {
@@ -121,7 +122,7 @@ func (c *chatService) handleJoinChat(ws *websocket.Conn, msg msgdomain.Message) 
 		c.log.Error("Join Chat already in chat",
 			zap.Any("user", msg.SenderID),
 			zap.Any("chat", msg.ChatID))
-		return fmt.Errorf("user %s already in chat %s", msg.SenderID, msg.ChatID)
+		return fmt.Errorf("user %s already in chat %v", msg.SenderID, msg.ChatID)
 	}
 
 	chat.addClient(NewClient(msg.SenderID, msg.ChatID, ws))
@@ -136,7 +137,7 @@ func (c *chatService) handleLeaveChat(ws *websocket.Conn, msg msgdomain.Message)
 		c.log.Error("Leave Chat with unknown chatID",
 			zap.Any("user", msg.SenderID),
 			zap.Any("chat", msg.ChatID))
-		return fmt.Errorf("unknown chatID %s", msg.ChatID)
+		return fmt.Errorf("unknown chatID %v", msg.ChatID)
 	}
 
 	chat.m.RLock()
@@ -146,7 +147,7 @@ func (c *chatService) handleLeaveChat(ws *websocket.Conn, msg msgdomain.Message)
 		c.log.Error("Leave Chat user not found in chat",
 			zap.Any("user", msg.SenderID),
 			zap.Any("chat", msg.ChatID))
-		return fmt.Errorf("user %s not found in chat %s", msg.SenderID, msg.ChatID)
+		return fmt.Errorf("user %s not found in chat %v", msg.SenderID, msg.ChatID)
 	}
 
 	chat.m.Lock()
