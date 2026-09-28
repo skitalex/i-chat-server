@@ -12,37 +12,29 @@ services:
     command: postgres -c 'max_connections=500'
     restart: unless-stopped
     logging: *default-logging
-    environment:
-      - POSTGRES_DB=${POSTGRES_DB:-db}
-      - POSTGRES_USER=${POSTGRES_USER:-postgres}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-}
+    env_file:
+      - .env
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
       - chat_network
     ports:
-      - "127.0.0.1:${PG_PORT:-5432}:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
+      - "127.0.0.1:${PG_PORT}:${PG_PORT}"
   migrator:
     container_name: migrator-chat-container
     build:
       context: .
       dockerfile: docker/migrations.Dockerfile
-    restart: "no"
+    restart: on-failure
     logging: *default-logging
     depends_on:
-      postgres:
-        condition: service_healthy
+      - postgres
     environment:
       DB_HOST: postgres
-      MIGRATION_DIR: ${MIGRATION_DIR:-./migrations}
     networks:
       - chat_network
+    env_file:
+      - .env
   redis:
     image: "redis/redis-stack:7.4.0-v0"
     container_name: redis-chat-container
@@ -52,11 +44,6 @@ services:
       - redis-data:/data
     networks:
       - chat_network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
   chat-server:
     build:
       context: .
@@ -67,21 +54,12 @@ services:
     logging: *default-logging
     restart: unless-stopped
     depends_on:
-      postgres:
-        condition: service_healthy
-      migrator:
-        condition: service_completed_successfully
-      redis:
-        condition: service_healthy
+      - postgres
+      - redis
     networks:
       - chat_network
-    environment:
-      - REDIS_PORT=${REDIS_PORT:-6379}
-      - REDIS_HOST=${REDIS_HOST:-redis-chat-container}
-      - REDIS_DB=${REDIS_DB:-redis-chat-container}
-      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
-      - POSTGRES_HOST=${POSTGRES_HOST:-postgres-chat-container}
-      - POSTGRES_SSL=${POSTGRES_SSL:-disable}
+    env_file:
+      - .env
 
 networks:
   chat_network:
