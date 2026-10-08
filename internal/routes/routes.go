@@ -35,6 +35,15 @@ func InitRoutes(ctrl controller.ChatController) *http.ServeMux {
 			ctrl.CreateChat(w, r)
 		}
 	})
+	
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	
+	mux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	
 
 	return mux
 }
