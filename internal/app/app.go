@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"go.uber.org/zap"
@@ -40,15 +41,13 @@ func (a *App) Run(ctx context.Context) error {
 		}
 	}()
 
-	nctx, cancel := signal.NotifyContext(ctx, os.Interrupt)
-	defer cancel()
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, os.Interrupt)
+	nctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	<-nctx.Done()
 
 	a.serviceProvider.Logger(ctx).Info("shutting down the server...")
-	shutdownCtx, cancel := context.WithTimeout(nctx, 30*time.Second)
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	if err := a.chatServer.Shutdown(shutdownCtx); err != nil {
 		a.serviceProvider.Logger(ctx).Error("error shutting down the server", zap.Error(err))
@@ -81,7 +80,7 @@ func (a *App) initServiceProvider(ctx context.Context) error {
 }
 
 func (a *App) initHttpServer(ctx context.Context) error {
-	muxRouter := routes.InitRoutes(a.serviceProvider.ChatController(ctx))
+	muxRouter := routes.InitRoutes(a.serviceProvider.ChatController(ctx), a.serviceProvider.DBClient(ctx).PingContext)
 
 	a.chatServer = &http.Server{
 		Addr:           a.serviceProvider.HttpConfig().Address(),

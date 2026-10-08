@@ -11,7 +11,7 @@ RUN chmod +x /bin/goose
 WORKDIR /app
 
 COPY migrations migrations/
-COPY migrations.sh .env ./
+COPY migrations.sh ./
 
 RUN chmod +x /app/migrations.sh
 
