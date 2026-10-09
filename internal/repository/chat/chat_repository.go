@@ -78,7 +78,7 @@ func (c *chatRepository) GetChats(ctx context.Context) ([]*chatdomain.Chat, erro
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var chats []*chatdomain.Chat
 	for rows.Next() {

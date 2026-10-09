@@ -8,8 +8,6 @@ type chat struct {
 	m       sync.RWMutex
 	chatID  int64
 	clients map[string]*client
-
-	isClosed bool
 }
 
 func newChat(chatID int64) *chat {

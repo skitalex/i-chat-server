@@ -68,7 +68,10 @@ func (c *implementation) CreateChat(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(resp)
+	if _, err := w.Write(resp); err != nil {
+		c.log.Error("Create Chat write response", zap.Error(err))
+	}
+
 }
 
 // GetChats implements controller.ChatController.
@@ -88,7 +91,9 @@ func (c *implementation) GetChats(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(resp)
+	if _, err := w.Write(resp); err != nil {
+		c.log.Error("Get Chats write response", zap.Error(err))
+	}
 }
 
 func (c *implementation) HandleWebSocket(ws *websocket.Conn) {
@@ -103,10 +108,11 @@ func (c *implementation) HandleWebSocket(ws *websocket.Conn) {
 				SenderID: "SYSTEM",
 				ChatID:   client.ChatID,
 			}
-			c.srv.GetIncomeMessage(ws, msg)
+			if err := c.srv.GetIncomeMessage(ws, msg); err != nil {
+				c.log.Error("HandleWebSocket", zap.Error(err))
+			}
 		}
-		err := ws.Close()
-		if err != nil {
+		if err := ws.Close(); err != nil {
 			c.log.Error("error close websocket connection", zap.Error(err))
 		}
 	}()

@@ -1,0 +1,71 @@
+name: CI/CD ON MERGE pull_request
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Linters
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+      
+      - name: install go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      
+      - name: linter
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.14.0
+      - name: go vet
+        run: go vet ./...
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+   
+    services:
+      postgres:
+        image: postgres:16
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_DB: db
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres -d db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: db
+      POSTGRES_SSL: disable
+    steps:
+      # 1. checkout
+      - name: Checkout code
+        uses: actions/checkout@v5
+      # 2. setup-go
+      - name: install go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+      # 3. поставить goose
+      - name: install goose
+        run: go install github.com/pressly/goose/v3/cmd/goose@v3.14.0
+      
+      # 4. прогнать миграции
+      - name: Migrations
+        run: goose -dir ./migrations postgres "host=$POSTGRES_HOST port=$POSTGRES_PORT user=$POSTGRES_USER password=$POSTGRES_PASSWORD dbname=$POSTGRES_DB sslmode=$POSTGRES_SSL" up -v
+      # 5. go test ./... -race -cover
+      - name: Tests
+        run: go test ./... -race -cover
