@@ -1,18 +1,19 @@
-FROM alpine
+FROM alpine:3.20
 
-RUN apk update && \
-    apk upgrade && \
-    apk add bash && \
-    rm -rf /var/cache/apk/*
+ARG GOOSE_VERSION=v3.14.0
+ARG TARGETARCH
 
-ADD https://github.com/pressly/goose/releases/download/v3.14.0/goose_linux_x86_64 /bin/goose
-RUN chmod +x /bin/goose
+RUN case "$TARGETARCH" in \
+      amd64) ARCH=x86_64 ;; \
+      arm64) ARCH=arm64 ;; \
+      *) echo "unsupported arch: $TARGETARCH" && exit 1 ;; \
+    esac && \
+    wget -qO /bin/goose "https://github.com/pressly/goose/releases/download/${GOOSE_VERSION}/goose_linux_${ARCH}" && \
+    chmod +x /bin/goose
 
 WORKDIR /app
 
 COPY migrations migrations/
-COPY migrations.sh ./
+COPY --chmod=755 migrations.sh ./
 
-RUN chmod +x /app/migrations.sh
-
-ENTRYPOINT [ "bash", "migrations.sh" ]
+ENTRYPOINT [ "migrations.sh" ]
