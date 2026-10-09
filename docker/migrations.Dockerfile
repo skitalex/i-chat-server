@@ -16,4 +16,4 @@ WORKDIR /app
 COPY migrations migrations/
 COPY --chmod=755 migrations.sh ./
 
-ENTRYPOINT [ "migrations.sh" ]
+ENTRYPOINT [ "./migrations.sh" ]
