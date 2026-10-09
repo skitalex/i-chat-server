@@ -17,7 +17,7 @@ func TestNewChatControllerWithoutOptions(t *testing.T) {
 // TestNewChatControllerWithLogger verifies logger option is properly applied
 func TestNewChatControllerWithLogger(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
-	t.Fatal("Broke test")
+	t.Fatal("Broke test 2")
 	defer logger.Sync()
 
 	ctrl := NewChatController(WithLogger(logger))
