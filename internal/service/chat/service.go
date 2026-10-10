@@ -23,11 +23,7 @@ func NewChatService(repo repository.ChatRepository, log *zap.Logger) service.Cha
 		log:     log,
 	}
 
-	go func() {
-		if err := s.processMessage(); err != nil {
-			s.log.Error("process message failed", zap.Error(err))
-		}
-	}()
+	go s.processMessage()
 
 	return s
 }
@@ -166,39 +162,42 @@ func (c *chatService) handleLeaveChat(ws *websocket.Conn, msg msgdomain.Message)
 }
 
 func (c *chatService) processMessage() error {
-	for msg := range c.msgChan {
-		c.mutex.RLock()
-		chat, ok := c.chats[msg.ChatID]
-		c.mutex.RUnlock()
-		if !ok {
-			// Handle error: chat not found
+	for {
+		select {
+		case msg := <-c.msgChan:
+			c.mutex.RLock()
+			chat, ok := c.chats[msg.ChatID]
+			c.mutex.RUnlock()
+			if !ok {
+				// Handle error: chat not found
 
-			continue
-		}
-
-		chat.m.RLock()
-		clients := make([]*client, 0, len(chat.clients))
-		for _, c := range chat.clients {
-			if c.id == msg.SenderID {
-				continue
-			}
-			clients = append(clients, c)
-		}
-		chat.m.RUnlock()
-
-		// Broadcast the message to all clients in the chat
-		for _, client := range clients {
-			err := client.sendMessage(msg)
-			if err != nil {
-				c.log.Error("processMessage",
-					zap.Any("msg", msg),
-					zap.Any("client", client.id),
-					zap.Any("chat", msg.ChatID),
-					zap.Error(err))
 				continue
 			}
 
+			chat.m.RLock()
+			clients := make([]*client, 0, len(chat.clients))
+			for _, c := range chat.clients {
+				if c.id == msg.SenderID {
+					continue
+				}
+				clients = append(clients, c)
+			}
+			chat.m.RUnlock()
+
+			// Broadcast the message to all clients in the chat
+			for _, client := range clients {
+				err := client.sendMessage(msg)
+				if err != nil {
+					c.log.Error("processMessage",
+						zap.Any("msg", msg),
+						zap.Any("client", client.id),
+						zap.Any("chat", msg.ChatID),
+						zap.Error(err))
+					continue
+				}
+			}
+		default:
+			// Process the message (e.g., broadcast to other clients)
 		}
 	}
-	return nil
 }

@@ -17,7 +17,7 @@ func TestWebSocketEchoHandler(t *testing.T) {
 
 	// Create a simple echo WebSocket handler for testing
 	echoHandler := func(ws *websocket.Conn) {
-		defer ws.Close() //nolint:errcheck
+		defer ws.Close()
 		var msg string
 		err := websocket.Message.Receive(ws, &msg)
 		if err != nil {
@@ -48,7 +48,7 @@ func TestWebSocketEchoHandler(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to dial WebSocket: %v", err)
 	}
-	defer ws.Close() //nolint:errcheck
+	defer ws.Close()
 
 	// Send a message
 	testMessage := "hello websocket"
@@ -74,12 +74,12 @@ func TestWebSocketEchoHandler(t *testing.T) {
 // TestWebSocketConnectionClose demonstrates testing connection closure
 func TestWebSocketConnectionClose(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
-	defer logger.Sync() //nolint:errcheck
+	defer logger.Sync()
 
 	// Handler that closes connection immediately
 	closeHandler := func(ws *websocket.Conn) {
 		logger.Info("client connected", zap.String("remote", ws.RemoteAddr().String()))
-		ws.Close() //nolint:errcheck
+		ws.Close()
 	}
 
 	server := httptest.NewServer(
@@ -95,7 +95,7 @@ func TestWebSocketConnectionClose(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to dial: %v", err)
 	}
-	defer func() { _ = ws.Close() }() //nolint:errcheck
+	defer ws.Close()
 
 	// Try to read - should get error since handler closes
 	var msg string
@@ -108,10 +108,10 @@ func TestWebSocketConnectionClose(t *testing.T) {
 // TestWebSocketBinaryFrames demonstrates testing binary message handling
 func TestWebSocketBinaryFrames(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
-	defer logger.Sync() //nolint:errcheck
+	defer logger.Sync()
 
 	binaryHandler := func(ws *websocket.Conn) {
-		defer func() { _ = ws.Close() }() //nolint:errcheck.
+		defer ws.Close()
 		var data []byte
 		err := websocket.Message.Receive(ws, &data)
 		if err != nil {
@@ -133,7 +133,7 @@ func TestWebSocketBinaryFrames(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to dial: %v", err)
 	}
-	defer func() { _ = ws.Close() }() //nolint:errcheck.
+	defer ws.Close()
 
 	// Send binary data
 	testData := []byte{0x01, 0x02, 0x03, 0x04}

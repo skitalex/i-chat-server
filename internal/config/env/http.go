@@ -11,8 +11,8 @@ type httpCfg struct {
 }
 
 func NewHttpConfig() *httpCfg {
-	host := config.GetEnvStringOrDefault("HTTP_HOST_CHAT", "0.0.0.0")
-	port := config.GetEnvStringOrDefault("HTTP_PORT_CHAT", "8181")
+	host := config.GetEnvStringOrDefault("HTTP_HOST", "0.0.0.0")
+	port := config.GetEnvStringOrDefault("HTTP_PORT", "8181")
 
 	return &httpCfg{
 		host: host,

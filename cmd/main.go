@@ -13,7 +13,7 @@ func main() {
 		log.Fatalf("failed to initialize app: %s", err.Error())
 	}
 
-	if err := app.Run(ctx); err != nil {
+	if err := app.Run(); err != nil {
 		log.Fatalf("application error: %s", err.Error())
 	}
 }
