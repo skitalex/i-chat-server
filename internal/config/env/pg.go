@@ -13,9 +13,9 @@ const (
 	dbname     = "POSTGRES_DB"
 	dbuser     = "POSTGRES_USER"
 	dbpassword = "POSTGRES_PASSWORD"
-	dbport     = "PG_PORT"
-	dbhost     = "PG_HOST"
-	dbssl      = "PG_SSL"
+	dbport     = "POSTGRES_PORT"
+	dbhost     = "POSTGRES_HOST"
+	dbssl      = "POSTGRES_SSL"
 )
 
 func NewPGConfig() (*pgConfig, error) {

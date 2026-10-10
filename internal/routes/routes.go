@@ -2,13 +2,15 @@ package routes
 
 import (
 	"chatsrv/internal/controller"
+	"context"
 	"net/http"
 	"net/url"
+	"time"
 
 	"golang.org/x/net/websocket"
 )
 
-func InitRoutes(ctrl controller.ChatController) *http.ServeMux {
+func InitRoutes(ctrl controller.ChatController, ping func(context.Context) error) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	wsServer := &websocket.Server{
@@ -34,6 +36,20 @@ func InitRoutes(ctrl controller.ChatController) *http.ServeMux {
 		case "POST":
 			ctrl.CreateChat(w, r)
 		}
+	})
+
+	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	mux.HandleFunc("/readyz", func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
+		defer cancel()
+		if err := ping(ctx); err != nil {
+			http.Error(w, "db unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
 	})
 
 	return mux
